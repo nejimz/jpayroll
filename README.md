@@ -1,36 +1,66 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Payroll PH — Phase 1
 
-## Getting Started
+Philippines payroll and timekeeping (Time In / Out) per [docs/PRD.md](docs/PRD.md).
 
-First, run the development server:
+**Phase 1 (this repo):** Auth/RBAC, employees, schedules, holidays, clock, timesheets, corrections, payroll periods, statutory contribution/tax tables, payroll runs, payslips (view + PDF), basic reports.
+
+**Phase 2 (not built yet):** Leave, shifts, org structure, government filing exports, bank disbursement.
+
+## Stack
+
+- Next.js (App Router) + TypeScript + Tailwind
+- Auth.js (credentials)
+- PostgreSQL + Prisma (driver adapter `@prisma/adapter-pg`)
+- Money stored as **integer centavos**; labor days in **Asia/Manila**
+
+## Setup
+
+1. Start Postgres (Docker maps host **5433** → container 5432):
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+docker compose up -d
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Copy env and install:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+cp .env.example .env
+npm install
+npx prisma migrate dev
+npm run db:seed
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Open [http://localhost:3000](http://localhost:3000).
 
-## Learn More
+### Demo logins
 
-To learn more about Next.js, take a look at the following resources:
+Password for all: `password123`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Email | Role |
+| --- | --- |
+| admin@demo.local | ADMIN |
+| hr@demo.local | HR |
+| finance@demo.local | FINANCE |
+| staff@demo.local | EMPLOYEE |
+| manager@demo.local | MANAGER |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Smoke path
 
-## Deploy on Vercel
+1. Sign in as `staff@demo.local` → **Clock** → Time In, later Time Out.
+2. Sign in as `hr@demo.local` → **Periods** → create cut-off covering today → **Lock**.
+3. **Run / recalculate payroll** → review register → **Finalize & publish payslips**.
+4. Sign in as staff → **Payslips** → view / download PDF.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Compliance disclaimer
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Seeded SSS / PhilHealth / Pag-IBIG / BIR withholding tables are **illustrative**. Verify against current agency circulars before any production use. This software is not tax or legal advice.
+
+## Useful scripts
+
+| Script | Purpose |
+| --- | --- |
+| `npm run db:up` | Start Docker Postgres |
+| `npm run db:migrate` | Apply migrations |
+| `npm run db:seed` | Reset demo master data |
+| `npm run dev` | Dev server |

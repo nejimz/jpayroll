@@ -1,0 +1,367 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  EMPLOYEE
+  MANAGER
+  HR
+  FINANCE
+  ADMIN
+}
+
+enum EmploymentStatus {
+  ACTIVE
+  SEPARATED
+}
+
+enum PayType {
+  MONTHLY
+  DAILY
+  HOURLY
+}
+
+enum PunchType {
+  IN
+  OUT
+}
+
+enum PunchSource {
+  CLOCK
+  CORRECTION
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum HolidayType {
+  LEGAL
+  SPECIAL
+  COMPANY
+}
+
+enum PeriodStatus {
+  OPEN
+  LOCKED
+  DRAFT_PAYROLL
+  APPROVED
+  FINALIZED
+  PAID
+}
+
+enum PayrollRunStatus {
+  DRAFT
+  FINALIZED
+}
+
+enum CutoffPattern {
+  SEMI_MONTHLY
+  MONTHLY
+}
+
+enum ContributionTableType {
+  SSS
+  PHILHEALTH
+  PAGIBIG
+}
+
+model Company {
+  id                   String        @id @default(cuid())
+  name                 String
+  tin                  String?
+  sssEmployerNo        String?
+  philhealthEmployerNo String?
+  pagibigEmployerNo    String?
+  cutoffPattern        CutoffPattern @default(SEMI_MONTHLY)
+  requireGeo           Boolean       @default(false)
+  requireIp            Boolean       @default(false)
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  users                 User[]
+  employees             Employee[]
+  schedules             Schedule[]
+  holidays              Holiday[]
+  payrollPeriods        PayrollPeriod[]
+  contributionTables    ContributionTable[]
+  taxTables             TaxTable[]
+  auditLogs             AuditLog[]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         Role     @default(EMPLOYEE)
+  companyId    String
+  employeeId   String?  @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  company  Company   @relation(fields: [companyId], references: [id])
+  employee Employee? @relation(fields: [employeeId], references: [id])
+
+  missedPunchReviews MissedPunchRequest[] @relation("MissedPunchReviewer")
+  auditLogs          AuditLog[]
+}
+
+model Employee {
+  id                String           @id @default(cuid())
+  companyId         String
+  employeeNo        String
+  fullName          String
+  hireDate          DateTime         @db.Date
+  endDate           DateTime?        @db.Date
+  status            EmploymentStatus @default(ACTIVE)
+  payType           PayType          @default(MONTHLY)
+  basicRateCentavos Int
+  tin               String?
+  sssNumber         String?
+  philhealthNumber  String?
+  pagibigNumber     String?
+  bankCode          String?
+  bankAccountNo     String?
+  bankAccountName   String?
+  department        String?
+  managerId         String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  company             Company              @relation(fields: [companyId], references: [id])
+  manager             Employee?            @relation("EmployeeManager", fields: [managerId], references: [id])
+  reports             Employee[]           @relation("EmployeeManager")
+  user                User?
+  scheduleAssignments ScheduleAssignment[]
+  attendanceLogs      AttendanceLog[]
+  missedPunchRequests MissedPunchRequest[]
+  timesheetDays       TimesheetDay[]
+  payrollItems        PayrollItem[]
+
+  @@unique([companyId, employeeNo])
+}
+
+model Schedule {
+  id            String   @id @default(cuid())
+  companyId     String
+  name          String
+  workdays      Int[]    // 0=Sun .. 6=Sat
+  startTime     String   // "09:00"
+  endTime       String   // "18:00"
+  breakMinutes  Int      @default(60)
+  graceMinutes  Int      @default(5)
+  restDays      Int[]    @default([])
+  ndStartTime   String   @default("22:00")
+  ndEndTime     String   @default("06:00")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  company     Company              @relation(fields: [companyId], references: [id])
+  assignments ScheduleAssignment[]
+}
+
+model ScheduleAssignment {
+  id         String    @id @default(cuid())
+  employeeId String
+  scheduleId String
+  effectiveFrom DateTime @db.Date
+  effectiveTo   DateTime? @db.Date
+  createdAt  DateTime  @default(now())
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+  schedule Schedule @relation(fields: [scheduleId], references: [id])
+}
+
+model Holiday {
+  id        String      @id @default(cuid())
+  companyId String
+  date      DateTime    @db.Date
+  name      String
+  type      HolidayType
+  createdAt DateTime    @default(now())
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@unique([companyId, date])
+}
+
+model AttendanceLog {
+  id          String      @id @default(cuid())
+  employeeId  String
+  punchType   PunchType
+  punchedAt   DateTime
+  manilaDate  DateTime    @db.Date
+  source      PunchSource @default(CLOCK)
+  ipAddress   String?
+  latitude    Float?
+  longitude   Float?
+  createdById String?
+  createdAt   DateTime    @default(now())
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  @@index([employeeId, manilaDate])
+  @@index([employeeId, punchedAt])
+}
+
+model MissedPunchRequest {
+  id           String        @id @default(cuid())
+  employeeId   String
+  proposedTime DateTime
+  punchType    PunchType
+  reason       String
+  status       RequestStatus @default(PENDING)
+  reviewerId   String?
+  reviewNote   String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+  reviewer User?    @relation("MissedPunchReviewer", fields: [reviewerId], references: [id])
+}
+
+model TimesheetDay {
+  id               String   @id @default(cuid())
+  employeeId       String
+  manilaDate       DateTime @db.Date
+  regularMinutes   Int      @default(0)
+  otMinutes        Int      @default(0)
+  lateMinutes      Int      @default(0)
+  undertimeMinutes Int      @default(0)
+  ndMinutes        Int      @default(0)
+  dayType          String   @default("REGULAR") // REGULAR | REST | LEGAL | SPECIAL
+  isAdjusted       Boolean  @default(false)
+  adjustmentReason String?
+  hasUnpairedPunch Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  @@unique([employeeId, manilaDate])
+}
+
+model PayrollPeriod {
+  id        String       @id @default(cuid())
+  companyId String
+  startDate DateTime     @db.Date
+  endDate   DateTime     @db.Date
+  payDate   DateTime     @db.Date
+  status    PeriodStatus @default(OPEN)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  company Company      @relation(fields: [companyId], references: [id])
+  runs    PayrollRun[]
+
+  @@unique([companyId, startDate, endDate])
+}
+
+model PayrollRun {
+  id                    String           @id @default(cuid())
+  periodId              String
+  status                PayrollRunStatus @default(DRAFT)
+  sssTableId            String?
+  philhealthTableId     String?
+  pagibigTableId        String?
+  taxTableId            String?
+  timesheetSnapshotHash String?
+  finalizedAt           DateTime?
+  finalizedById         String?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  period PayrollPeriod @relation(fields: [periodId], references: [id])
+  items  PayrollItem[]
+}
+
+model PayrollItem {
+  id                  String @id @default(cuid())
+  runId               String
+  employeeId          String
+  regularPayCentavos  Int    @default(0)
+  otPayCentavos       Int    @default(0)
+  holidayPayCentavos  Int    @default(0)
+  ndPayCentavos       Int    @default(0)
+  otherEarningsCentavos Int  @default(0)
+  grossCentavos       Int    @default(0)
+  sssEeCentavos       Int    @default(0)
+  sssErCentavos       Int    @default(0)
+  philhealthEeCentavos Int   @default(0)
+  philhealthErCentavos Int   @default(0)
+  pagibigEeCentavos   Int    @default(0)
+  pagibigErCentavos   Int    @default(0)
+  taxableCentavos     Int    @default(0)
+  taxCentavos         Int    @default(0)
+  otherDeductionsCentavos Int @default(0)
+  netCentavos         Int    @default(0)
+  detailJson          Json?
+
+  run      PayrollRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  employee Employee   @relation(fields: [employeeId], references: [id])
+  payslip  Payslip?
+
+  @@unique([runId, employeeId])
+}
+
+model ContributionTable {
+  id            String                @id @default(cuid())
+  companyId     String
+  type          ContributionTableType
+  effectiveFrom DateTime              @db.Date
+  effectiveTo   DateTime?             @db.Date
+  bracketsJson  Json
+  createdAt     DateTime              @default(now())
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@index([companyId, type, effectiveFrom])
+}
+
+model TaxTable {
+  id            String    @id @default(cuid())
+  companyId     String
+  name          String
+  effectiveFrom DateTime  @db.Date
+  effectiveTo   DateTime? @db.Date
+  bracketsJson  Json
+  createdAt     DateTime  @default(now())
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@index([companyId, effectiveFrom])
+}
+
+model Payslip {
+  id            String   @id @default(cuid())
+  payrollItemId String   @unique
+  publishedAt   DateTime @default(now())
+  pdfStorageKey String?
+
+  payrollItem PayrollItem @relation(fields: [payrollItemId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  companyId  String
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String
+  beforeJson Json?
+  afterJson  Json?
+  createdAt  DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id])
+  actor   User?   @relation(fields: [actorId], references: [id])
+
+  @@index([companyId, createdAt])
+  @@index([entityType, entityId])
+}
