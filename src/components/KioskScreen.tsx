@@ -121,34 +121,34 @@ export function KioskScreen() {
   const flashSuccess = flash?.kind === "success";
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[var(--background)] px-6 py-10">
+    <div className="safe-pad relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background px-6 py-10">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--accent-soft)_0%,transparent_65%)]"
       />
       <div className="relative z-10 w-full max-w-2xl text-center">
         {status && !available ? (
-          <p className="mb-8 text-sm text-[var(--muted)]">
+          <p className="mb-8 text-sm text-muted">
             Kiosk not available on this network
             {status.clientIp ? ` (${status.clientIp})` : ""}.
           </p>
         ) : null}
 
-        <p className="font-[family-name:var(--font-display)] text-6xl tabular-nums tracking-tight text-[var(--foreground)] md:text-7xl">
+        <p className="font-[family-name:var(--font-display)] text-6xl tabular-nums tracking-tight text-foreground md:text-7xl">
           {time}
         </p>
-        <p className="mt-3 text-lg text-[var(--muted)]">{date}</p>
+        <p className="mt-3 text-lg text-muted">{date}</p>
 
-        <p className="mt-12 font-[family-name:var(--font-display)] text-2xl text-[var(--foreground)] md:text-3xl">
+        <p className="mt-12 font-[family-name:var(--font-display)] text-2xl text-foreground md:text-3xl">
           {available ? "Scan your badge" : "Waiting for network access"}
         </p>
-        <p className="mt-2 text-sm text-[var(--muted)]">
+        <p className="mt-2 text-sm text-muted">
           {available
             ? "Use camera or barcode scanner"
             : "Ask HR to enable this kiosk IP"}
         </p>
         {available && status?.companyName ? (
-          <p className="mt-1 text-sm text-[var(--muted)]">{status.companyName} · Asia/Manila</p>
+          <p className="mt-1 text-sm text-muted">{status.companyName} · Asia/Manila</p>
         ) : null}
 
         {available ? (

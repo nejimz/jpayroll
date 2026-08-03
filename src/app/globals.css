@@ -5,17 +5,48 @@
   --foreground: #14212b;
   --card: #ffffff;
   --accent: #0f6e56;
+  --accent-hover: #0c5a46;
   --accent-soft: #e6f4ef;
   --border: #d5dde3;
   --muted: #5b6b76;
   --danger: #b42318;
+  --danger-hover: #912018;
+  --danger-soft: #fef3f2;
+  --success: #067647;
+  --success-soft: #ecfdf3;
+  --warning: #b54708;
+  --warning-soft: #fffaeb;
+  --ring: #0f6e56;
+  --radius: 0.5rem;
+  --shadow-sm: 0 1px 2px rgb(20 33 43 / 0.05);
+  --shadow-md: 0 4px 12px rgb(20 33 43 / 0.08);
+  --surface-1: #ffffff;
+  --surface-2: #f4f6f8;
+  --surface-3: #e8edf1;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-danger: var(--danger);
+  --color-danger-hover: var(--danger-hover);
+  --color-danger-soft: var(--danger-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-ring: var(--ring);
   --font-sans: var(--font-source-sans);
   --font-display: var(--font-fraunces);
+  --radius-DEFAULT: var(--radius);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
 }
 
 body {
@@ -34,4 +65,73 @@ select,
 textarea,
 button {
   font: inherit;
+}
+
+/* Focus ring utility */
+.focus-ring {
+  outline: none;
+}
+
+.focus-ring:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Safe area for mobile clock / kiosk */
+.safe-pad {
+  padding-top: env(safe-area-inset-top, 0);
+  padding-right: env(safe-area-inset-right, 0);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  padding-left: env(safe-area-inset-left, 0);
+}
+
+/* Intentional motion — respect reduced motion */
+@media (prefers-reduced-motion: no-preference) {
+  .motion-fade-in {
+    animation: fade-in 0.28s ease-out both;
+  }
+
+  .motion-press:active {
+    transform: scale(0.98);
+  }
+
+  .motion-nav {
+    transition:
+      background-color 0.15s ease,
+      color 0.15s ease;
+  }
+
+  .motion-btn {
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease,
+      color 0.15s ease,
+      transform 0.1s ease,
+      box-shadow 0.15s ease;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-fade-in,
+  .motion-press,
+  .motion-nav,
+  .motion-btn {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .motion-press:active {
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

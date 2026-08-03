@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { formatPhp } from "@/lib/money";
 import { formatEmployeeName } from "@/lib/employee-name";
 import { finalizePayrollAction } from "../../actions/payroll";
-import { Button, Card, PageHeader } from "@/components/ui";
+import { Button, PageHeader, StatTile, StatusPill } from "@/components/ui";
 import { redirect, notFound } from "next/navigation";
 
 export default async function PayrollDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -31,78 +31,79 @@ export default async function PayrollDetailPage({ params }: { params: Promise<{ 
   );
 
   return (
-    <div>
+    <div className="space-y-6">
       <PageHeader
         title="Payroll register"
-        subtitle={`${run.period.startDate.toISOString().slice(0, 10)} → ${run.period.endDate.toISOString().slice(0, 10)} · ${run.status}`}
+        subtitle={`${run.period.startDate.toISOString().slice(0, 10)} → ${run.period.endDate.toISOString().slice(0, 10)}`}
+        actions={<StatusPill tone={run.status === "FINALIZED" ? "success" : "accent"}>{run.status}</StatusPill>}
       />
-      <Card className="mb-4 grid gap-2 md:grid-cols-4 text-sm">
-        <div>
-          <p className="text-[var(--muted)]">Gross</p>
-          <p className="font-medium">{formatPhp(totals.gross)}</p>
-        </div>
-        <div>
-          <p className="text-[var(--muted)]">Net</p>
-          <p className="font-medium">{formatPhp(totals.net)}</p>
-        </div>
-        <div>
-          <p className="text-[var(--muted)]">Withholding</p>
-          <p className="font-medium">{formatPhp(totals.tax)}</p>
-        </div>
-        <div>
-          <p className="text-[var(--muted)]">SSS EE+ER</p>
-          <p className="font-medium">{formatPhp(totals.sss)}</p>
-        </div>
-      </Card>
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <StatTile label="Gross" value={formatPhp(totals.gross)} />
+        <StatTile label="Net" value={formatPhp(totals.net)} />
+        <StatTile label="Withholding" value={formatPhp(totals.tax)} />
+        <StatTile label="SSS EE+ER" value={formatPhp(totals.sss)} />
+      </div>
 
       {run.status === "DRAFT" ? (
-        <form action={finalizePayrollAction} className="mb-4">
+        <form action={finalizePayrollAction}>
           <input type="hidden" name="runId" value={run.id} />
-          <Button type="submit">Finalize & publish payslips</Button>
+          <Button type="submit" size="lg">
+            Finalize & publish payslips
+          </Button>
         </form>
       ) : null}
 
-      <Card className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead className="text-[var(--muted)]">
-            <tr>
-              <th className="py-2">Employee</th>
-              <th>Regular</th>
-              <th>OT</th>
-              <th>Holiday</th>
-              <th>ND</th>
-              <th>Gross</th>
-              <th>SSS EE</th>
-              <th>PH EE</th>
-              <th>HDMF EE</th>
-              <th>Tax</th>
-              <th>Net</th>
+      <div className="overflow-x-auto rounded-[var(--radius)] border border-border bg-card shadow-[var(--shadow-sm)]">
+        <table className="w-full min-w-[56rem] text-left text-sm">
+          <thead>
+            <tr className="border-b border-border bg-background/80">
+              {[
+                "Employee",
+                "Regular",
+                "OT",
+                "Holiday",
+                "ND",
+                "Gross",
+                "SSS EE",
+                "PH EE",
+                "HDMF EE",
+                "Tax",
+                "Net",
+              ].map((h) => (
+                <th
+                  key={h}
+                  className="px-3 py-2.5 text-xs font-semibold uppercase tracking-wide text-muted"
+                >
+                  {h}
+                </th>
+              ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-border">
             {run.items.map((i) => (
-              <tr key={i.id} className="border-t border-[var(--border)]">
-                <td className="py-2">
+              <tr key={i.id} className="hover:bg-background/60">
+                <td className="px-3 py-2.5 whitespace-nowrap">
                   {i.employee.employeeNo} {formatEmployeeName(i.employee)}
                 </td>
-                <td>{formatPhp(i.regularPayCentavos)}</td>
-                <td>{formatPhp(i.otPayCentavos)}</td>
-                <td>{formatPhp(i.holidayPayCentavos)}</td>
-                <td>{formatPhp(i.ndPayCentavos)}</td>
-                <td>{formatPhp(i.grossCentavos)}</td>
-                <td>{formatPhp(i.sssEeCentavos)}</td>
-                <td>{formatPhp(i.philhealthEeCentavos)}</td>
-                <td>{formatPhp(i.pagibigEeCentavos)}</td>
-                <td>{formatPhp(i.taxCentavos)}</td>
-                <td className="font-medium">{formatPhp(i.netCentavos)}</td>
+                <td className="px-3 py-2.5 tabular-nums">{formatPhp(i.regularPayCentavos)}</td>
+                <td className="px-3 py-2.5 tabular-nums">{formatPhp(i.otPayCentavos)}</td>
+                <td className="px-3 py-2.5 tabular-nums">{formatPhp(i.holidayPayCentavos)}</td>
+                <td className="px-3 py-2.5 tabular-nums">{formatPhp(i.ndPayCentavos)}</td>
+                <td className="px-3 py-2.5 tabular-nums">{formatPhp(i.grossCentavos)}</td>
+                <td className="px-3 py-2.5 tabular-nums">{formatPhp(i.sssEeCentavos)}</td>
+                <td className="px-3 py-2.5 tabular-nums">{formatPhp(i.philhealthEeCentavos)}</td>
+                <td className="px-3 py-2.5 tabular-nums">{formatPhp(i.pagibigEeCentavos)}</td>
+                <td className="px-3 py-2.5 tabular-nums">{formatPhp(i.taxCentavos)}</td>
+                <td className="px-3 py-2.5 font-medium tabular-nums">{formatPhp(i.netCentavos)}</td>
               </tr>
             ))}
           </tbody>
         </table>
-      </Card>
-      <p className="mt-3 text-xs text-[var(--muted)]">
-        Table versions: SSS {run.sssTableId?.slice(0, 8)}… · Tax {run.taxTableId?.slice(0, 8)}… · snapshot{" "}
-        {run.timesheetSnapshotHash?.slice(0, 12)}…
+      </div>
+      <p className="text-xs text-muted">
+        Table versions: SSS {run.sssTableId?.slice(0, 8)}… · Tax {run.taxTableId?.slice(0, 8)}… ·
+        snapshot {run.timesheetSnapshotHash?.slice(0, 12)}…
       </p>
     </div>
   );

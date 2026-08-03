@@ -3,7 +3,16 @@ import { prisma } from "@/lib/prisma";
 import { centavosToPesos, formatPhp } from "@/lib/money";
 import { formatEmployeeName } from "@/lib/employee-name";
 import { upsertEmployeeAction } from "../actions/hr";
-import { Button, Card, Field, inputClass, PageHeader } from "@/components/ui";
+import {
+  Button,
+  Card,
+  Field,
+  FormSection,
+  inputClass,
+  PageHeader,
+  StatusPill,
+  StatTile,
+} from "@/components/ui";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { Prisma } from "@prisma/client";
@@ -46,44 +55,6 @@ function directoryHref(params: {
   if (params.edit) sp.set("edit", params.edit);
   const qs = sp.toString();
   return qs ? `/employees?${qs}` : "/employees";
-}
-
-function StatusPill({ active }: { active: boolean }) {
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-        active
-          ? "bg-[var(--accent-soft)] text-[var(--accent)]"
-          : "bg-[var(--background)] text-[var(--muted)] ring-1 ring-[var(--border)]"
-      }`}
-    >
-      <span
-        className={`h-1.5 w-1.5 rounded-full ${active ? "bg-[var(--accent)]" : "bg-[var(--muted)]"}`}
-        aria-hidden
-      />
-      {active ? "Active" : "Inactive"}
-    </span>
-  );
-}
-
-function FormSection({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="pt-5 first:pt-0">
-      <div className="mb-4">
-        <h3 className="text-sm font-semibold tracking-tight text-[var(--foreground)]">{title}</h3>
-        {description ? <p className="mt-0.5 text-xs text-[var(--muted)]">{description}</p> : null}
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{children}</div>
-    </section>
-  );
 }
 
 export default async function EmployeesPage({
@@ -158,49 +129,26 @@ export default async function EmployeesPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          <PageHeader
-            title="Employees"
-            subtitle="People, pay rates, and statutory IDs for this company."
-          />
-        </div>
-        {editing ? (
-          <Link
-            href={directoryHref({ q, page })}
-            className="mt-1 inline-flex shrink-0 items-center gap-1.5 rounded-md border border-[var(--border)] bg-white px-3 py-2 text-sm text-[var(--muted)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
-          >
-            <X className="h-4 w-4" aria-hidden />
-            Cancel edit
-          </Link>
-        ) : null}
-      </div>
+      <PageHeader
+        title="Employees"
+        subtitle="People, pay rates, and statutory IDs for this company."
+        actions={
+          editing ? (
+            <Link
+              href={directoryHref({ q, page })}
+              className="focus-ring inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-md border border-border bg-card px-3 py-2 text-sm text-muted transition hover:border-accent hover:text-accent"
+            >
+              <X className="h-4 w-4" aria-hidden />
+              Cancel edit
+            </Link>
+          ) : null
+        }
+      />
 
-      <div className="-mt-2 grid gap-3 sm:grid-cols-3">
-        <Card>
-          <p className="text-xs font-medium uppercase tracking-[0.06em] text-[var(--muted)]">
-            Headcount
-          </p>
-          <p className="mt-2 font-[family-name:var(--font-display)] text-3xl tracking-tight">
-            {totalHeadcount}
-          </p>
-        </Card>
-        <Card>
-          <p className="text-xs font-medium uppercase tracking-[0.06em] text-[var(--muted)]">
-            Active
-          </p>
-          <p className="mt-2 font-[family-name:var(--font-display)] text-3xl tracking-tight text-[var(--accent)]">
-            {activeCount}
-          </p>
-        </Card>
-        <Card>
-          <p className="text-xs font-medium uppercase tracking-[0.06em] text-[var(--muted)]">
-            Inactive
-          </p>
-          <p className="mt-2 font-[family-name:var(--font-display)] text-3xl tracking-tight">
-            {inactiveCount}
-          </p>
-        </Card>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <StatTile label="Headcount" value={totalHeadcount} />
+        <StatTile label="Active" value={<span className="text-accent">{activeCount}</span>} />
+        <StatTile label="Inactive" value={inactiveCount} />
       </div>
 
       <Card padded={false} className="overflow-hidden">
@@ -495,7 +443,9 @@ export default async function EmployeesPage({
                         <p className="truncate font-medium tracking-tight">
                           {formatEmployeeName(e)}
                         </p>
-                        <StatusPill active={active} />
+                        <StatusPill tone={active ? "accent" : "neutral"} dot>
+                          {active ? "Active" : "Inactive"}
+                        </StatusPill>
                       </div>
                       <p className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-[var(--muted)]">
                         <span className="font-medium text-[var(--foreground)]/70">
