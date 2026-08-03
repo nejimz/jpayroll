@@ -1,6 +1,7 @@
 import { getSessionUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { formatPhp } from "@/lib/money";
+import { formatEmployeeName } from "@/lib/employee-name";
 import { Card, PageHeader } from "@/components/ui";
 import Link from "next/link";
 
@@ -31,7 +32,7 @@ export default async function PayslipsPage() {
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <p className="font-medium">
-                  {i.employee.fullName} · {i.run.period.startDate.toISOString().slice(0, 10)} →{" "}
+                  {formatEmployeeName(i.employee)} · {i.run.period.startDate.toISOString().slice(0, 10)} →{" "}
                   {i.run.period.endDate.toISOString().slice(0, 10)}
                 </p>
                 <p className="text-sm text-[var(--muted)]">

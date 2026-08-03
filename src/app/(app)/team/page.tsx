@@ -1,5 +1,6 @@
 import { getSessionUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { formatEmployeeName } from "@/lib/employee-name";
 import { Card, PageHeader } from "@/components/ui";
 import { redirect } from "next/navigation";
 import { adjustTimesheetAction } from "../actions/attendance";
@@ -45,7 +46,7 @@ export default async function TeamPage() {
           return (
             <Card key={e.id}>
               <p className="font-medium">
-                {e.employeeNo} — {e.fullName}
+                {e.employeeNo} — {formatEmployeeName(e)}
                 {unpaired ? <span className="ml-2 text-sm text-[var(--danger)]">unpaired punch</span> : null}
               </p>
               <p className="text-sm text-[var(--muted)]">
@@ -64,7 +65,7 @@ export default async function TeamPage() {
               <select className={inputClass} name="employeeId" required>
                 {list.map((e) => (
                   <option key={e.id} value={e.id}>
-                    {e.employeeNo} {e.fullName}
+                    {e.employeeNo} {formatEmployeeName(e)}
                   </option>
                 ))}
               </select>

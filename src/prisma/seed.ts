@@ -50,7 +50,10 @@ async function main() {
     data: {
       companyId: company.id,
       employeeNo: "E001",
-      fullName: "Alex Admin",
+      firstName: "Alex",
+      middleName: null,
+      lastName: "Admin",
+      suffix: null,
       hireDate: new Date("2024-01-01"),
       payType: "MONTHLY",
       basicRateCentavos: 5000000, // 50,000 PHP
@@ -66,7 +69,10 @@ async function main() {
     data: {
       companyId: company.id,
       employeeNo: "E002",
-      fullName: "Hanna HR",
+      firstName: "Hanna",
+      middleName: null,
+      lastName: "HR",
+      suffix: null,
       hireDate: new Date("2024-01-01"),
       payType: "MONTHLY",
       basicRateCentavos: 4000000,
@@ -82,7 +88,10 @@ async function main() {
     data: {
       companyId: company.id,
       employeeNo: "E003",
-      fullName: "Sam Staff",
+      firstName: "Sam",
+      middleName: null,
+      lastName: "Staff",
+      suffix: null,
       hireDate: new Date("2024-06-01"),
       payType: "MONTHLY",
       basicRateCentavos: 2500000,

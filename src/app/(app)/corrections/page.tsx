@@ -1,5 +1,6 @@
 import { getSessionUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { formatEmployeeName } from "@/lib/employee-name";
 import { requestMissedPunchAction, reviewMissedPunchAction } from "../actions/attendance";
 import { Button, Card, Field, inputClass, PageHeader } from "@/components/ui";
 import { hasRole } from "@/lib/rbac";
@@ -66,7 +67,7 @@ export default async function CorrectionsPage() {
             {pending.map((p) => (
               <div key={p.id} className="border-t border-[var(--border)] pt-3 text-sm">
                 <p>
-                  <strong>{p.employee.fullName}</strong> · {p.punchType} · {p.proposedTime.toISOString()}
+                  <strong>{formatEmployeeName(p.employee)}</strong> · {p.punchType} · {p.proposedTime.toISOString()}
                 </p>
                 <p className="text-[var(--muted)]">{p.reason}</p>
                 <form action={reviewMissedPunchAction} className="mt-2 flex flex-wrap items-end gap-2">

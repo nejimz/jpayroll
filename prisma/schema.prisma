@@ -117,7 +117,10 @@ model Employee {
   id                String           @id @default(cuid())
   companyId         String
   employeeNo        String
-  fullName          String
+  firstName         String
+  middleName        String?
+  lastName          String
+  suffix            String?
   hireDate          DateTime         @db.Date
   endDate           DateTime?        @db.Date
   status            EmploymentStatus @default(ACTIVE)

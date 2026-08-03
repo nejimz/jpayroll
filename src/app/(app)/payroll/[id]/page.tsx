@@ -1,6 +1,7 @@
 import { getSessionUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { formatPhp } from "@/lib/money";
+import { formatEmployeeName } from "@/lib/employee-name";
 import { finalizePayrollAction } from "../../actions/payroll";
 import { Button, Card, PageHeader } from "@/components/ui";
 import { redirect, notFound } from "next/navigation";
@@ -82,7 +83,7 @@ export default async function PayrollDetailPage({ params }: { params: Promise<{ 
             {run.items.map((i) => (
               <tr key={i.id} className="border-t border-[var(--border)]">
                 <td className="py-2">
-                  {i.employee.employeeNo} {i.employee.fullName}
+                  {i.employee.employeeNo} {formatEmployeeName(i.employee)}
                 </td>
                 <td>{formatPhp(i.regularPayCentavos)}</td>
                 <td>{formatPhp(i.otPayCentavos)}</td>

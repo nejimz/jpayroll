@@ -1,6 +1,6 @@
 import { getSessionUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { centavosToPesos, formatPhp } from "@/lib/money";
+import { formatPhp } from "@/lib/money";
 import { upsertEmployeeAction } from "../actions/hr";
 import { Button, Card, Field, inputClass, PageHeader } from "@/components/ui";
 import { redirect } from "next/navigation";
@@ -10,7 +10,7 @@ export default async function EmployeesPage() {
   if (!user || !["HR", "ADMIN"].includes(user.role)) redirect("/dashboard");
   const employees = await prisma.employee.findMany({
     where: { companyId: user.companyId },
-    orderBy: { employeeNo: "asc" },
+    orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
   });
 
   return (
@@ -18,12 +18,21 @@ export default async function EmployeesPage() {
       <PageHeader title="Employees" subtitle="Master data with statutory IDs and rates (centavos stored)." />
       <Card className="mb-6">
         <h2 className="mb-3 font-medium">Add employee</h2>
-        <form action={upsertEmployeeAction} className="grid gap-3 md:grid-cols-3">
+        <form action={upsertEmployeeAction} className="grid gap-3 md:grid-cols-4">
           <Field label="Employee No">
             <input className={inputClass} name="employeeNo" required />
           </Field>
-          <Field label="Full name">
-            <input className={inputClass} name="fullName" required />
+          <Field label="First name">
+            <input className={inputClass} name="firstName" required />
+          </Field>
+          <Field label="Middle name">
+            <input className={inputClass} name="middleName" />
+          </Field>
+          <Field label="Last name">
+            <input className={inputClass} name="lastName" required />
+          </Field>
+          <Field label="Suffix">
+            <input className={inputClass} name="suffix" placeholder="Jr., Sr., III" />
           </Field>
           <Field label="Hire date">
             <input className={inputClass} name="hireDate" type="date" required />
@@ -53,7 +62,7 @@ export default async function EmployeesPage() {
           <Field label="Pag-IBIG">
             <input className={inputClass} name="pagibigNumber" />
           </Field>
-          <div className="md:col-span-3">
+          <div className="md:col-span-4">
             <Button type="submit">Create</Button>
           </div>
         </form>
@@ -65,7 +74,10 @@ export default async function EmployeesPage() {
             <thead className="text-[var(--muted)]">
               <tr>
                 <th className="py-2">No</th>
-                <th>Name</th>
+                <th>First</th>
+                <th>Middle</th>
+                <th>Last</th>
+                <th>Suffix</th>
                 <th>Status</th>
                 <th>Pay</th>
                 <th>Rate</th>
@@ -76,7 +88,10 @@ export default async function EmployeesPage() {
               {employees.map((e) => (
                 <tr key={e.id} className="border-t border-[var(--border)]">
                   <td className="py-2">{e.employeeNo}</td>
-                  <td>{e.fullName}</td>
+                  <td>{e.firstName}</td>
+                  <td>{e.middleName ?? "—"}</td>
+                  <td>{e.lastName}</td>
+                  <td>{e.suffix ?? "—"}</td>
                   <td>{e.status}</td>
                   <td>{e.payType}</td>
                   <td>{formatPhp(e.basicRateCentavos)}</td>
@@ -87,7 +102,6 @@ export default async function EmployeesPage() {
           </table>
         </div>
       </Card>
-      <p className="mt-2 hidden text-xs">{centavosToPesos(0)}</p>
     </div>
   );
 }

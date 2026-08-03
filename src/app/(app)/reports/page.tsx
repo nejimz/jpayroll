@@ -1,6 +1,7 @@
 import { getSessionUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { formatPhp } from "@/lib/money";
+import { formatEmployeeName } from "@/lib/employee-name";
 import { Card, PageHeader } from "@/components/ui";
 import { redirect } from "next/navigation";
 
@@ -55,7 +56,7 @@ export default async function ReportsPage() {
         <ul className="space-y-1 text-sm">
           {exceptions.map((e) => (
             <li key={e.id}>
-              {e.employee.fullName} · {e.manilaDate.toISOString().slice(0, 10)} · {e.dayType}
+              {formatEmployeeName(e.employee)} · {e.manilaDate.toISOString().slice(0, 10)} · {e.dayType}
             </li>
           ))}
           {exceptions.length === 0 ? <li className="text-[var(--muted)]">None</li> : null}
@@ -67,7 +68,7 @@ export default async function ReportsPage() {
         <ul className="space-y-1 text-sm">
           {attendance.map((a) => (
             <li key={a.id}>
-              {a.employee.employeeNo} {a.employee.fullName} · {a.punchType} · {a.punchedAt.toISOString()}
+              {a.employee.employeeNo} {formatEmployeeName(a.employee)} · {a.punchType} · {a.punchedAt.toISOString()}
             </li>
           ))}
         </ul>

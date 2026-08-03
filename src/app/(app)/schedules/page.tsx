@@ -1,5 +1,6 @@
 import { getSessionUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { formatEmployeeName } from "@/lib/employee-name";
 import { assignScheduleAction, upsertScheduleAction } from "../actions/hr";
 import { Button, Card, Field, inputClass, PageHeader } from "@/components/ui";
 import { redirect } from "next/navigation";
@@ -52,7 +53,7 @@ export default async function SchedulesPage() {
             <select className={inputClass} name="employeeId" required>
               {employees.map((e) => (
                 <option key={e.id} value={e.id}>
-                  {e.employeeNo} — {e.fullName}
+                  {e.employeeNo} — {formatEmployeeName(e)}
                 </option>
               ))}
             </select>

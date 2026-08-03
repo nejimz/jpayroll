@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { formatEmployeeName } from "@/lib/employee-name";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { PayslipDocument } from "@/domain/payslip-pdf";
 
@@ -36,7 +37,7 @@ export async function GET(
     PayslipDocument({
       companyName: item.run.period.company.name,
       tin: item.run.period.company.tin,
-      employeeName: item.employee.fullName,
+      employeeName: formatEmployeeName(item.employee),
       employeeNo: item.employee.employeeNo,
       periodStart: item.run.period.startDate.toISOString().slice(0, 10),
       periodEnd: item.run.period.endDate.toISOString().slice(0, 10),

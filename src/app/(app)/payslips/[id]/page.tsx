@@ -1,6 +1,7 @@
 import { getSessionUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { formatPhp } from "@/lib/money";
+import { formatEmployeeName } from "@/lib/employee-name";
 import { Card, PageHeader } from "@/components/ui";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
@@ -39,7 +40,7 @@ export default async function PayslipDetailPage({ params }: { params: Promise<{ 
             {item.run.period.payDate.toISOString().slice(0, 10)}
           </p>
           <p className="mt-2 font-medium">
-            {item.employee.employeeNo} — {item.employee.fullName}
+            {item.employee.employeeNo} — {formatEmployeeName(item.employee)}
           </p>
         </div>
         <dl className="grid grid-cols-2 gap-2 text-sm">

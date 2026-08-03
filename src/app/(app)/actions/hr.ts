@@ -13,7 +13,10 @@ export async function upsertEmployeeAction(formData: FormData) {
   const basicRateCentavos = parsePesosInput(String(formData.get("basicRatePesos") ?? "0"));
   const data = {
     employeeNo: String(formData.get("employeeNo")),
-    fullName: String(formData.get("fullName")),
+    firstName: String(formData.get("firstName") ?? "").trim(),
+    middleName: String(formData.get("middleName") || "").trim() || null,
+    lastName: String(formData.get("lastName") ?? "").trim(),
+    suffix: String(formData.get("suffix") || "").trim() || null,
     hireDate: new Date(String(formData.get("hireDate"))),
     endDate: formData.get("endDate") ? new Date(String(formData.get("endDate"))) : null,
     status: String(formData.get("status") ?? "ACTIVE") as "ACTIVE" | "SEPARATED",
@@ -28,6 +31,10 @@ export async function upsertEmployeeAction(formData: FormData) {
     bankAccountNo: String(formData.get("bankAccountNo") || "") || null,
     bankAccountName: String(formData.get("bankAccountName") || "") || null,
   };
+
+  if (!data.firstName || !data.lastName) {
+    throw new Error("First name and last name are required");
+  }
 
   if (id) {
     const before = await prisma.employee.findUniqueOrThrow({ where: { id } });
