@@ -8,10 +8,17 @@ import { redirect } from "next/navigation";
 export default async function EmployeesPage() {
   const user = await getSessionUser();
   if (!user || !["HR", "ADMIN"].includes(user.role)) redirect("/dashboard");
-  const employees = await prisma.employee.findMany({
-    where: { companyId: user.companyId },
-    orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
-  });
+  const [employees, departments] = await Promise.all([
+    prisma.employee.findMany({
+      where: { companyId: user.companyId },
+      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+      include: { department: true },
+    }),
+    prisma.department.findMany({
+      where: { companyId: user.companyId },
+      orderBy: { name: "asc" },
+    }),
+  ]);
 
   return (
     <div>
@@ -19,12 +26,16 @@ export default async function EmployeesPage() {
       <Card className="mb-6">
         <h2 className="mb-3 font-medium">Add employee</h2>
         <form action={upsertEmployeeAction} className="grid gap-3 md:grid-cols-4">
-          <Field label="Employee No">
-            <input className={inputClass} name="employeeNo" required />
-          </Field>
-          <Field label="Badge code">
-            <input className={inputClass} name="badgeCode" placeholder="RFID / barcode / QR payload" />
-          </Field>
+          <div className="md:col-span-2">
+            <Field label="Employee No">
+              <input className={inputClass} name="employeeNo" required />
+            </Field>
+          </div>
+          <div className="md:col-span-2">
+            <Field label="Badge code">
+              <input className={inputClass} name="badgeCode" placeholder="RFID / barcode / QR payload" />
+            </Field>
+          </div>
           <Field label="First name">
             <input className={inputClass} name="firstName" required />
           </Field>
@@ -51,7 +62,14 @@ export default async function EmployeesPage() {
             <input className={inputClass} name="basicRatePesos" required placeholder="25000" />
           </Field>
           <Field label="Department">
-            <input className={inputClass} name="department" />
+            <select className={inputClass} name="departmentId" defaultValue="">
+              <option value="">—</option>
+              {departments.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
           </Field>
           <Field label="TIN">
             <input className={inputClass} name="tin" />
@@ -82,6 +100,7 @@ export default async function EmployeesPage() {
                 <th>Middle</th>
                 <th>Last</th>
                 <th>Suffix</th>
+                <th>Department</th>
                 <th>Status</th>
                 <th>Pay</th>
                 <th>Rate</th>
@@ -97,6 +116,7 @@ export default async function EmployeesPage() {
                   <td>{e.middleName ?? "—"}</td>
                   <td>{e.lastName}</td>
                   <td>{e.suffix ?? "—"}</td>
+                  <td>{e.department?.name ?? "—"}</td>
                   <td>{e.status}</td>
                   <td>{e.payType}</td>
                   <td>{formatPhp(e.basicRateCentavos)}</td>

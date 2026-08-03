@@ -90,6 +90,7 @@ model Company {
 
   users                 User[]
   employees             Employee[]
+  departments           Department[]
   schedules             Schedule[]
   holidays              Holiday[]
   payrollPeriods        PayrollPeriod[]
@@ -137,12 +138,13 @@ model Employee {
   bankCode          String?
   bankAccountNo     String?
   bankAccountName   String?
-  department        String?
+  departmentId      String?
   managerId         String?
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 
   company             Company              @relation(fields: [companyId], references: [id])
+  department          Department?          @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   manager             Employee?            @relation("EmployeeManager", fields: [managerId], references: [id])
   reports             Employee[]           @relation("EmployeeManager")
   user                User?
@@ -154,6 +156,19 @@ model Employee {
 
   @@unique([companyId, employeeNo])
   @@unique([companyId, badgeCode])
+}
+
+model Department {
+  id        String   @id @default(cuid())
+  companyId String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company   Company    @relation(fields: [companyId], references: [id])
+  employees Employee[]
+
+  @@unique([companyId, name])
 }
 
 model Schedule {

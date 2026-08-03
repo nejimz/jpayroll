@@ -66,6 +66,7 @@ const NAV_SECTION_DEFS: NavSectionDef[] = [
     label: "Setup",
     items: [
       { href: "/employees", label: "Employees", show: (u) => hasRole(u, ["HR", "ADMIN"]) },
+      { href: "/departments", label: "Departments", show: (u) => hasRole(u, ["HR", "ADMIN"]) },
       { href: "/schedules", label: "Schedules", show: (u) => hasRole(u, ["HR", "ADMIN"]) },
       { href: "/holidays", label: "Holidays", show: (u) => hasRole(u, ["HR", "ADMIN"]) },
       { href: "/tables", label: "Tax tables", show: (u) => hasRole(u, ["HR", "ADMIN"]) },

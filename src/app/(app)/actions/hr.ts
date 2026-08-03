@@ -27,7 +27,7 @@ export async function upsertEmployeeAction(formData: FormData) {
     sssNumber: String(formData.get("sssNumber") || "") || null,
     philhealthNumber: String(formData.get("philhealthNumber") || "") || null,
     pagibigNumber: String(formData.get("pagibigNumber") || "") || null,
-    department: String(formData.get("department") || "") || null,
+    departmentId: String(formData.get("departmentId") || "").trim() || null,
     bankCode: String(formData.get("bankCode") || "") || null,
     bankAccountNo: String(formData.get("bankAccountNo") || "") || null,
     bankAccountName: String(formData.get("bankAccountName") || "") || null,
@@ -116,6 +116,43 @@ export async function assignScheduleAction(formData: FormData) {
     },
   });
   revalidatePath("/schedules");
+  revalidatePath("/employees");
+}
+
+export async function upsertDepartmentAction(formData: FormData) {
+  const user = await requireUser(["HR", "ADMIN"]);
+  const id = String(formData.get("id") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+  if (!name) throw new Error("Department name is required");
+
+  if (id) {
+    const existing = await prisma.department.findFirst({
+      where: { id, companyId: user.companyId },
+    });
+    if (!existing) throw new Error("Department not found");
+    await prisma.department.update({ where: { id }, data: { name } });
+  } else {
+    await prisma.department.create({
+      data: { name, companyId: user.companyId },
+    });
+  }
+  revalidatePath("/departments");
+  revalidatePath("/employees");
+}
+
+export async function deleteDepartmentAction(formData: FormData) {
+  const user = await requireUser(["HR", "ADMIN"]);
+  const id = String(formData.get("id"));
+  const dept = await prisma.department.findFirst({
+    where: { id, companyId: user.companyId },
+    include: { _count: { select: { employees: true } } },
+  });
+  if (!dept) throw new Error("Department not found");
+  if (dept._count.employees > 0) {
+    throw new Error("Cannot delete a department that still has employees assigned");
+  }
+  await prisma.department.delete({ where: { id } });
+  revalidatePath("/departments");
   revalidatePath("/employees");
 }
 

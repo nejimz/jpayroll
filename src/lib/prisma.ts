@@ -4,7 +4,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
 /** Bump after schema migrations so a running Node process does not reuse a stale client. */
-const PRISMA_SCHEMA_REV = "kiosk-badge-v1";
+const PRISMA_SCHEMA_REV = "departments-v2";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
@@ -33,8 +33,11 @@ function createPrisma() {
 }
 
 function getPrisma() {
-  if (globalForPrisma.prisma && globalForPrisma.prismaRev === PRISMA_SCHEMA_REV) {
-    return globalForPrisma.prisma;
+  const cached = globalForPrisma.prisma;
+  const hasDepartment =
+    cached != null && typeof (cached as { department?: unknown }).department === "object";
+  if (cached && globalForPrisma.prismaRev === PRISMA_SCHEMA_REV && hasDepartment) {
+    return cached;
   }
   const client = createPrisma();
   if (process.env.NODE_ENV !== "production") {

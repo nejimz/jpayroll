@@ -18,6 +18,7 @@ async function main() {
   await prisma.taxTable.deleteMany();
   await prisma.user.deleteMany();
   await prisma.employee.deleteMany();
+  await prisma.department.deleteMany();
   await prisma.company.deleteMany();
 
   const company = await prisma.company.create({
@@ -32,6 +33,12 @@ async function main() {
       kioskAllowedIps: ["127.0.0.1", "::1"],
     },
   });
+
+  const [opsDept, hrDept, supportDept] = await Promise.all([
+    prisma.department.create({ data: { companyId: company.id, name: "Operations" } }),
+    prisma.department.create({ data: { companyId: company.id, name: "HR" } }),
+    prisma.department.create({ data: { companyId: company.id, name: "Support" } }),
+  ]);
 
   const schedule = await prisma.schedule.create({
     data: {
@@ -64,7 +71,7 @@ async function main() {
       sssNumber: "01-1111111-1",
       philhealthNumber: "01-111111111-1",
       pagibigNumber: "1111-1111-1111",
-      department: "Operations",
+      departmentId: opsDept.id,
     },
   });
 
@@ -84,7 +91,7 @@ async function main() {
       sssNumber: "02-2222222-2",
       philhealthNumber: "02-222222222-2",
       pagibigNumber: "2222-2222-2222",
-      department: "HR",
+      departmentId: hrDept.id,
     },
   });
 
@@ -104,7 +111,7 @@ async function main() {
       sssNumber: "03-3333333-3",
       philhealthNumber: "03-333333333-3",
       pagibigNumber: "3333-3333-3333",
-      department: "Support",
+      departmentId: supportDept.id,
       managerId: adminEmp.id,
     },
   });
