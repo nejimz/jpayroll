@@ -17,7 +17,11 @@ export const authConfig = {
     authorized({ auth, request }) {
       const path = request.nextUrl.pathname;
       const isLoggedIn = !!auth?.user;
-      const isPublic = path.startsWith("/login") || path.startsWith("/api/auth");
+      const isPublic =
+        path.startsWith("/login") ||
+        path.startsWith("/api/auth") ||
+        path.startsWith("/kiosk") ||
+        path.startsWith("/api/kiosk");
 
       if (isPublic) {
         if (isLoggedIn && path.startsWith("/login")) {

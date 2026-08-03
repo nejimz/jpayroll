@@ -33,6 +33,7 @@ enum PunchType {
 enum PunchSource {
   CLOCK
   CORRECTION
+  KIOSK
 }
 
 enum RequestStatus {
@@ -82,6 +83,8 @@ model Company {
   cutoffPattern        CutoffPattern @default(SEMI_MONTHLY)
   requireGeo           Boolean       @default(false)
   requireIp            Boolean       @default(false)
+  kioskEnabled         Boolean       @default(false)
+  kioskAllowedIps      String[]      @default([])
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
 
@@ -117,6 +120,7 @@ model Employee {
   id                String           @id @default(cuid())
   companyId         String
   employeeNo        String
+  badgeCode         String?
   firstName         String
   middleName        String?
   lastName          String
@@ -149,6 +153,7 @@ model Employee {
   payrollItems        PayrollItem[]
 
   @@unique([companyId, employeeNo])
+  @@unique([companyId, badgeCode])
 }
 
 model Schedule {

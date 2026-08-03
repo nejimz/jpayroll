@@ -13,6 +13,7 @@ export async function upsertEmployeeAction(formData: FormData) {
   const basicRateCentavos = parsePesosInput(String(formData.get("basicRatePesos") ?? "0"));
   const data = {
     employeeNo: String(formData.get("employeeNo")),
+    badgeCode: String(formData.get("badgeCode") || "").trim() || null,
     firstName: String(formData.get("firstName") ?? "").trim(),
     middleName: String(formData.get("middleName") || "").trim() || null,
     lastName: String(formData.get("lastName") ?? "").trim(),
@@ -142,6 +143,10 @@ export async function deleteHolidayAction(formData: FormData) {
 
 export async function updateCompanyAction(formData: FormData) {
   const user = await requireUser(["ADMIN", "HR"]);
+  const kioskAllowedIps = String(formData.get("kioskAllowedIps") ?? "")
+    .split(/[\n,]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
   await prisma.company.update({
     where: { id: user.companyId },
     data: {
@@ -153,6 +158,8 @@ export async function updateCompanyAction(formData: FormData) {
       cutoffPattern: String(formData.get("cutoffPattern") ?? "SEMI_MONTHLY") as CutoffPattern,
       requireGeo: formData.get("requireGeo") === "on",
       requireIp: formData.get("requireIp") === "on",
+      kioskEnabled: formData.get("kioskEnabled") === "on",
+      kioskAllowedIps,
     },
   });
   await writeAudit({

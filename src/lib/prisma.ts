@@ -4,7 +4,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
 /** Bump after schema migrations so a running Node process does not reuse a stale client. */
-const PRISMA_SCHEMA_REV = "employee-name-parts-v1";
+const PRISMA_SCHEMA_REV = "kiosk-badge-v1";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;

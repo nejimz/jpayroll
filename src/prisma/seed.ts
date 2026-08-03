@@ -28,6 +28,8 @@ async function main() {
       philhealthEmployerNo: "00-000000000-0",
       pagibigEmployerNo: "0000-0000-0000",
       cutoffPattern: "SEMI_MONTHLY",
+      kioskEnabled: true,
+      kioskAllowedIps: ["127.0.0.1", "::1"],
     },
   });
 
@@ -50,6 +52,7 @@ async function main() {
     data: {
       companyId: company.id,
       employeeNo: "E001",
+      badgeCode: "BADGE-E001",
       firstName: "Alex",
       middleName: null,
       lastName: "Admin",
@@ -69,6 +72,7 @@ async function main() {
     data: {
       companyId: company.id,
       employeeNo: "E002",
+      badgeCode: "BADGE-E002",
       firstName: "Hanna",
       middleName: null,
       lastName: "HR",
@@ -88,6 +92,7 @@ async function main() {
     data: {
       companyId: company.id,
       employeeNo: "E003",
+      badgeCode: "BADGE-E003",
       firstName: "Sam",
       middleName: null,
       lastName: "Staff",
@@ -238,6 +243,7 @@ async function main() {
   console.log("Seed complete.");
   console.log("Logins (password: password123):");
   console.log("  admin@demo.local / hr@demo.local / finance@demo.local / staff@demo.local / manager@demo.local");
+  console.log("Kiosk: /kiosk (enabled for 127.0.0.1 / ::1); badges BADGE-E001 / BADGE-E002 / BADGE-E003");
 }
 
 main()

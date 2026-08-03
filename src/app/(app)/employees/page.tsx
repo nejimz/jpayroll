@@ -22,6 +22,9 @@ export default async function EmployeesPage() {
           <Field label="Employee No">
             <input className={inputClass} name="employeeNo" required />
           </Field>
+          <Field label="Badge code">
+            <input className={inputClass} name="badgeCode" placeholder="RFID / barcode / QR payload" />
+          </Field>
           <Field label="First name">
             <input className={inputClass} name="firstName" required />
           </Field>
@@ -74,6 +77,7 @@ export default async function EmployeesPage() {
             <thead className="text-[var(--muted)]">
               <tr>
                 <th className="py-2">No</th>
+                <th>Badge</th>
                 <th>First</th>
                 <th>Middle</th>
                 <th>Last</th>
@@ -88,6 +92,7 @@ export default async function EmployeesPage() {
               {employees.map((e) => (
                 <tr key={e.id} className="border-t border-[var(--border)]">
                   <td className="py-2">{e.employeeNo}</td>
+                  <td>{e.badgeCode ?? "—"}</td>
                   <td>{e.firstName}</td>
                   <td>{e.middleName ?? "—"}</td>
                   <td>{e.lastName}</td>

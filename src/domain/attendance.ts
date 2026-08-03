@@ -36,7 +36,7 @@ export async function clockPunch(params: {
   latitude?: number | null;
   longitude?: number | null;
   createdById?: string | null;
-  source?: "CLOCK" | "CORRECTION";
+  source?: "CLOCK" | "CORRECTION" | "KIOSK";
   punchedAt?: Date;
   allowLocked?: boolean;
 }) {
