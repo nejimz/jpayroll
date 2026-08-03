@@ -7,9 +7,19 @@ export function PageHeader({ title, subtitle }: { title: string; subtitle?: stri
   );
 }
 
-export function Card({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+export function Card({
+  children,
+  className = "",
+  padded = true,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  padded?: boolean;
+}) {
   return (
-    <div className={`rounded-lg border border-[var(--border)] bg-[var(--card)] p-4 ${className}`}>
+    <div
+      className={`rounded-lg border border-[var(--border)] bg-[var(--card)] ${padded ? "p-4" : ""} ${className}`}
+    >
       {children}
     </div>
   );
@@ -29,7 +39,7 @@ export function Button({
   return (
     <button
       {...props}
-      className={`rounded-md px-3 py-2 text-sm font-medium disabled:opacity-50 ${styles} ${props.className ?? ""}`}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium disabled:opacity-50 ${styles} ${props.className ?? ""}`}
     >
       {children}
     </button>

@@ -37,13 +37,17 @@ Open [http://localhost:3000](http://localhost:3000).
 
 Password for all: `password123`
 
-| Email | Role |
-| --- | --- |
-| admin@demo.local | ADMIN |
-| hr@demo.local | HR |
-| finance@demo.local | FINANCE |
-| staff@demo.local | EMPLOYEE |
-| manager@demo.local | MANAGER |
+| Email | Role | Employee |
+| --- | --- | --- |
+| admin@demo.local | ADMIN | E001 Alex Admin (Operations, monthly) |
+| hr@demo.local | HR | E002 Hanna HR (HR, monthly) |
+| finance@demo.local | FINANCE | E004 Fay Finance (Finance, monthly) |
+| staff@demo.local | EMPLOYEE | E003 Sam Staff (Support, monthly) |
+| manager@demo.local | MANAGER | E005 Mia Manager (Engineering, monthly) |
+
+Seed also includes **E006** Dan Daily (daily pay), **E007** Holly Hourly (night shift), and **E008** Separated Sue (no login). Departments: Operations, HR, Finance, Engineering, Support. Schedules: Standard Office, Night Shift, Daily Crew. Holidays: illustrative 2026 PH calendar.
+
+Kiosk badges: `BADGE-E001` … `BADGE-E007` (allowed IPs `127.0.0.1` / `::1`).
 
 ## Smoke path
 

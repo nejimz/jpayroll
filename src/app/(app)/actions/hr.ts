@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { writeAudit } from "@/lib/audit";
@@ -11,6 +12,20 @@ export async function upsertEmployeeAction(formData: FormData) {
   const user = await requireUser(["HR", "ADMIN"]);
   const id = String(formData.get("id") ?? "");
   const basicRateCentavos = parsePesosInput(String(formData.get("basicRatePesos") ?? "0"));
+  const status = String(formData.get("status") ?? "ACTIVE") as "ACTIVE" | "SEPARATED";
+  if (status !== "ACTIVE" && status !== "SEPARATED") {
+    throw new Error("Invalid employment status");
+  }
+  const endDateRaw = String(formData.get("endDate") || "").trim();
+  const endDate =
+    status === "SEPARATED"
+      ? endDateRaw
+        ? new Date(endDateRaw)
+        : new Date()
+      : endDateRaw
+        ? new Date(endDateRaw)
+        : null;
+
   const data = {
     employeeNo: String(formData.get("employeeNo")),
     badgeCode: String(formData.get("badgeCode") || "").trim() || null,
@@ -19,8 +34,8 @@ export async function upsertEmployeeAction(formData: FormData) {
     lastName: String(formData.get("lastName") ?? "").trim(),
     suffix: String(formData.get("suffix") || "").trim() || null,
     hireDate: new Date(String(formData.get("hireDate"))),
-    endDate: formData.get("endDate") ? new Date(String(formData.get("endDate"))) : null,
-    status: String(formData.get("status") ?? "ACTIVE") as "ACTIVE" | "SEPARATED",
+    endDate,
+    status,
     payType: String(formData.get("payType") ?? "MONTHLY") as PayType,
     basicRateCentavos,
     tin: String(formData.get("tin") || "") || null,
@@ -38,7 +53,10 @@ export async function upsertEmployeeAction(formData: FormData) {
   }
 
   if (id) {
-    const before = await prisma.employee.findUniqueOrThrow({ where: { id } });
+    const before = await prisma.employee.findFirst({
+      where: { id, companyId: user.companyId },
+    });
+    if (!before) throw new Error("Employee not found");
     const after = await prisma.employee.update({ where: { id }, data });
     await writeAudit({
       companyId: user.companyId,
@@ -48,11 +66,13 @@ export async function upsertEmployeeAction(formData: FormData) {
       entityId: id,
       before: {
         basicRateCentavos: before.basicRateCentavos,
+        status: before.status,
         tin: before.tin,
         sssNumber: before.sssNumber,
       },
       after: {
         basicRateCentavos: after.basicRateCentavos,
+        status: after.status,
         tin: after.tin,
         sssNumber: after.sssNumber,
       },
@@ -71,6 +91,7 @@ export async function upsertEmployeeAction(formData: FormData) {
     });
   }
   revalidatePath("/employees");
+  if (id) redirect("/employees");
 }
 
 export async function upsertScheduleAction(formData: FormData) {
