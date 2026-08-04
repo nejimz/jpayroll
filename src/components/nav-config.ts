@@ -8,6 +8,7 @@ import {
   Clock,
   FileSpreadsheet,
   FileText,
+  IdCard,
   LayoutDashboard,
   Receipt,
   Settings2,
@@ -106,6 +107,12 @@ const NAV_SECTION_DEFS: NavSectionDef[] = [
     label: "Setup",
     items: [
       { href: "/employees", label: "Employees", icon: Users, show: (u) => hasRole(u, ["HR", "ADMIN"]) },
+      {
+        href: "/id-cards",
+        label: "ID cards",
+        icon: IdCard,
+        show: (u) => hasRole(u, ["HR", "ADMIN"]),
+      },
       {
         href: "/departments",
         label: "Departments",
