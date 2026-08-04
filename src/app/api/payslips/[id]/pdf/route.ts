@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getSessionUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { formatEmployeeName } from "@/lib/employee-name";
 import { renderToBuffer } from "@react-pdf/renderer";
@@ -9,8 +9,9 @@ export async function GET(
   _req: NextRequest,
   ctx: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Resolve from DB (not JWT alone) so companyId/employeeId stay valid after reseed.
+  const user = await getSessionUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await ctx.params;
   const item = await prisma.payrollItem.findUnique({
@@ -22,13 +23,13 @@ export async function GET(
     },
   });
   if (!item?.payslip) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  if (item.run.period.companyId !== session.user.companyId) {
+  if (item.run.period.companyId !== user.companyId) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   if (
-    session.user.employeeId &&
-    session.user.employeeId !== item.employeeId &&
-    !["HR", "ADMIN", "FINANCE"].includes(session.user.role)
+    user.employeeId &&
+    user.employeeId !== item.employeeId &&
+    !["HR", "ADMIN", "FINANCE"].includes(user.role)
   ) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }

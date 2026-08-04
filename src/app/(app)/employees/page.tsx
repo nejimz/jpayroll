@@ -19,6 +19,7 @@ import type { Prisma } from "@prisma/client";
 import {
   ChevronLeft,
   ChevronRight,
+  IdCard,
   Pencil,
   Plus,
   Save,
@@ -133,15 +134,24 @@ export default async function EmployeesPage({
         title="Employees"
         subtitle="People, pay rates, and statutory IDs for this company."
         actions={
-          editing ? (
+          <div className="flex flex-wrap items-center gap-2">
             <Link
-              href={directoryHref({ q, page })}
+              href="/id-cards"
               className="focus-ring inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-md border border-border bg-card px-3 py-2 text-sm text-muted transition hover:border-accent hover:text-accent"
             >
-              <X className="h-4 w-4" aria-hidden />
-              Cancel edit
+              <IdCard className="h-4 w-4" aria-hidden />
+              Print ID cards
             </Link>
-          ) : null
+            {editing ? (
+              <Link
+                href={directoryHref({ q, page })}
+                className="focus-ring inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-md border border-border bg-card px-3 py-2 text-sm text-muted transition hover:border-accent hover:text-accent"
+              >
+                <X className="h-4 w-4" aria-hidden />
+                Cancel edit
+              </Link>
+            ) : null}
+          </div>
         }
       />
 
@@ -170,7 +180,11 @@ export default async function EmployeesPage({
         <form action={upsertEmployeeAction} className="space-y-0 px-5 py-5">
           {editing ? <input type="hidden" name="id" value={editing.id} /> : null}
 
-          <FormSection title="Identity" description="Badge and legal name as shown on payslips.">
+          <FormSection
+            title="Identity"
+            description="Badge and legal name as shown on payslips."
+            divided={false}
+          >
             <div className="sm:col-span-1">
               <Field label="Employee No">
                 <input
@@ -227,6 +241,7 @@ export default async function EmployeesPage({
           <FormSection
             title="Employment"
             description="Status drives clock, kiosk, and payroll eligibility."
+            divided={false}
           >
             <Field label="Hire date">
               <input
@@ -271,7 +286,11 @@ export default async function EmployeesPage({
             </Field>
           </FormSection>
 
-          <FormSection title="Compensation" description="Basic rate in PHP; stored as centavos.">
+          <FormSection
+            title="Compensation"
+            description="Basic rate in PHP; stored as centavos."
+            divided={false}
+          >
             <Field label="Pay type">
               <select
                 className={inputClass}
@@ -294,7 +313,11 @@ export default async function EmployeesPage({
             </Field>
           </FormSection>
 
-          <FormSection title="Statutory IDs" description="Optional now; payroll warns if missing.">
+          <FormSection
+            title="Statutory IDs"
+            description="Optional now; payroll warns if missing."
+            divided={false}
+          >
             <Field label="TIN">
               <input className={inputClass} name="tin" defaultValue={editing?.tin ?? ""} />
             </Field>
@@ -321,7 +344,7 @@ export default async function EmployeesPage({
             </Field>
           </FormSection>
 
-          <div className="flex flex-wrap items-center gap-3 border-t border-[var(--border)] pt-5">
+          <div className="flex flex-wrap items-center gap-3 pt-6">
             <Button type="submit" className="min-w-[8.5rem]">
               {editing ? (
                 <>
@@ -471,6 +494,16 @@ export default async function EmployeesPage({
                         <p>SSS {e.sssNumber ?? "—"}</p>
                         <p className="mt-0.5">Hired {toDateInput(e.hireDate)}</p>
                       </div>
+                      {e.badgeCode ? (
+                        <a
+                          href={`/api/id-cards/pdf?ids=${e.id}`}
+                          className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] bg-white px-3 py-1.5 text-sm font-medium text-[var(--foreground)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                          title="Download ID card PDF"
+                        >
+                          <IdCard className="h-3.5 w-3.5" aria-hidden />
+                          Print ID
+                        </a>
+                      ) : null}
                       <Link
                         href={directoryHref({ q, page, edit: e.id })}
                         className="inline-flex items-center gap-1.5 rounded-md border border-[var(--border)] bg-white px-3 py-1.5 text-sm font-medium text-[var(--foreground)] transition group-hover:border-[var(--accent)] group-hover:text-[var(--accent)]"

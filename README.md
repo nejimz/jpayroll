@@ -45,7 +45,7 @@ Password for all: `password123`
 | staff@demo.local | EMPLOYEE | E003 Sam Staff (Support, monthly) |
 | manager@demo.local | MANAGER | E005 Mia Manager (Engineering, monthly) |
 
-Seed also includes **E006** Dan Daily (daily pay), **E007** Holly Hourly (night shift), and **E008** Separated Sue (no login). Departments: Operations, HR, Finance, Engineering, Support. Schedules: Standard Office, Night Shift, Daily Crew. Holidays: illustrative 2026 PH calendar.
+Seed also includes **E006** Dan Daily (daily pay), **E007** Holly Hourly (night shift), and **E008** Separated Sue (no login). Departments: Operations, HR, Finance, Engineering, Support. Schedules: Standard Office, Night Shift, Daily Crew. Holidays: illustrative 2026 PH calendar. Demo also seeds **June–July 2026** attendance plus **4 finalized** semi-monthly payroll runs with published payslips. HR/Admin can print employee **ID cards** (barcode + QR of `badgeCode`) from **ID cards** or Employees.
 
 Kiosk badges: `BADGE-E001` … `BADGE-E007` (allowed IPs `127.0.0.1` / `::1`).
 

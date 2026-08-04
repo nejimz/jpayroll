@@ -1,6 +1,8 @@
 import "dotenv/config";
 import bcrypt from "bcryptjs";
 import { prisma } from "../lib/prisma";
+import { manilaDayOfWeek, manilaTimeOnDate } from "../lib/manila";
+import { createOrRecalculatePayrollRun, finalizePayrollRun } from "../domain/payroll";
 
 async function main() {
   await prisma.auditLog.deleteMany();
@@ -267,7 +269,7 @@ async function main() {
     },
   });
 
-  await prisma.user.create({
+  const adminUser = await prisma.user.create({
     data: {
       email: "admin@demo.local",
       name: "Alex Admin",
@@ -440,8 +442,225 @@ async function main() {
     });
   }
 
+  // --- Two months of demo attendance + finalized semi-monthly payroll (Jun–Jul 2026) ---
+  const holidayByDate = new Map(holidays.map((h) => [h.date, h.type]));
+
+  type SeedWorker = {
+    emp: typeof adminEmp;
+    schedule: typeof officeSchedule;
+    overnight: boolean;
+  };
+
+  const workers: SeedWorker[] = [
+    { emp: adminEmp, schedule: officeSchedule, overnight: false },
+    { emp: hrEmp, schedule: officeSchedule, overnight: false },
+    { emp: staffEmp, schedule: officeSchedule, overnight: false },
+    { emp: financeEmp, schedule: officeSchedule, overnight: false },
+    { emp: managerEmp, schedule: officeSchedule, overnight: false },
+    { emp: dailyEmp, schedule: dailySchedule, overnight: false },
+    { emp: hourlyEmp, schedule: nightSchedule, overnight: true },
+  ];
+
+  function dateStr(d: Date): string {
+    return d.toISOString().slice(0, 10);
+  }
+
+  function addDaysUtc(dateOnly: Date, days: number): Date {
+    const next = new Date(dateOnly);
+    next.setUTCDate(next.getUTCDate() + days);
+    return next;
+  }
+
+  function eachDateInclusive(start: string, end: string): Date[] {
+    const out: Date[] = [];
+    let cur = new Date(start);
+    const last = new Date(end);
+    while (cur <= last) {
+      out.push(new Date(cur));
+      cur = addDaysUtc(cur, 1);
+    }
+    return out;
+  }
+
+  /** Stable 0–99 pseudo-random from employee + date for variety */
+  function roll(employeeNo: string, day: string): number {
+    let h = 0;
+    const s = `${employeeNo}:${day}`;
+    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    return h % 100;
+  }
+
+  const attendanceRows: {
+    employeeId: string;
+    punchType: "IN" | "OUT";
+    punchedAt: Date;
+    manilaDate: Date;
+    source: "CLOCK";
+  }[] = [];
+  const timesheetRows: {
+    employeeId: string;
+    manilaDate: Date;
+    regularMinutes: number;
+    otMinutes: number;
+    lateMinutes: number;
+    undertimeMinutes: number;
+    ndMinutes: number;
+    dayType: string;
+    isAdjusted: boolean;
+  }[] = [];
+
+  const demoStart = "2026-06-01";
+  const demoEnd = "2026-07-31";
+
+  for (const { emp, schedule, overnight } of workers) {
+    for (const day of eachDateInclusive(demoStart, demoEnd)) {
+      const ds = dateStr(day);
+      const dow = manilaDayOfWeek(day);
+      const holidayType = holidayByDate.get(ds);
+      const isRest =
+        schedule.restDays.includes(dow) || !schedule.workdays.includes(dow);
+
+      let dayType = "REGULAR";
+      if (holidayType === "LEGAL") dayType = "LEGAL";
+      else if (holidayType === "SPECIAL") dayType = "SPECIAL";
+      else if (holidayType === "COMPANY") dayType = "COMPANY";
+      else if (isRest) dayType = "REST";
+
+      const expectedMinutes = 480; // 8h after break for all seeded schedules
+      const r = roll(emp.employeeNo, ds);
+
+      // Unworked legal holiday still needs a timesheet row for holiday pay
+      if (dayType === "LEGAL") {
+        timesheetRows.push({
+          employeeId: emp.id,
+          manilaDate: day,
+          regularMinutes: 0,
+          otMinutes: 0,
+          lateMinutes: 0,
+          undertimeMinutes: 0,
+          ndMinutes: 0,
+          dayType: "LEGAL",
+          isAdjusted: true,
+        });
+        continue;
+      }
+
+      if (dayType !== "REGULAR") continue;
+
+      // Occasional absence (more for daily/hourly)
+      const absentThreshold = emp.payType === "MONTHLY" ? 3 : 8;
+      if (r < absentThreshold) continue;
+
+      const late = r >= 85 && r < 93;
+      const undertime = r >= 93 && r < 97;
+      const ot = r >= 97;
+      const lateMinutes = late ? 15 + (r % 20) : 0;
+      const undertimeMinutes = undertime ? 20 + (r % 25) : 0;
+      const otMinutes = ot ? 60 + (r % 60) : 0;
+      const regularMinutes = Math.max(
+        0,
+        expectedMinutes - lateMinutes - undertimeMinutes
+      );
+      const ndMinutes = overnight ? Math.min(regularMinutes + otMinutes, 360) : 0;
+
+      timesheetRows.push({
+        employeeId: emp.id,
+        manilaDate: day,
+        regularMinutes,
+        otMinutes,
+        lateMinutes,
+        undertimeMinutes,
+        ndMinutes,
+        dayType: "REGULAR",
+        isAdjusted: true,
+      });
+
+      // Matching punches (day shift same calendar day; night shift spans midnight)
+      const inOffset = lateMinutes;
+      const outExtra = otMinutes - undertimeMinutes;
+      if (overnight) {
+        const inAt = manilaTimeOnDate(ds, schedule.startTime);
+        inAt.setUTCMinutes(inAt.getUTCMinutes() + inOffset);
+        const nextDs = dateStr(addDaysUtc(day, 1));
+        const outAt = manilaTimeOnDate(nextDs, schedule.endTime);
+        outAt.setUTCMinutes(outAt.getUTCMinutes() + outExtra);
+        attendanceRows.push(
+          {
+            employeeId: emp.id,
+            punchType: "IN",
+            punchedAt: inAt,
+            manilaDate: day,
+            source: "CLOCK",
+          },
+          {
+            employeeId: emp.id,
+            punchType: "OUT",
+            punchedAt: outAt,
+            manilaDate: addDaysUtc(day, 1),
+            source: "CLOCK",
+          }
+        );
+      } else {
+        const inAt = manilaTimeOnDate(ds, schedule.startTime);
+        inAt.setUTCMinutes(inAt.getUTCMinutes() + inOffset);
+        const outAt = manilaTimeOnDate(ds, schedule.endTime);
+        outAt.setUTCMinutes(outAt.getUTCMinutes() + outExtra);
+        attendanceRows.push(
+          {
+            employeeId: emp.id,
+            punchType: "IN",
+            punchedAt: inAt,
+            manilaDate: day,
+            source: "CLOCK",
+          },
+          {
+            employeeId: emp.id,
+            punchType: "OUT",
+            punchedAt: outAt,
+            manilaDate: day,
+            source: "CLOCK",
+          }
+        );
+      }
+    }
+  }
+
+  // Insert in chunks to avoid oversized payloads
+  const chunk = 500;
+  for (let i = 0; i < attendanceRows.length; i += chunk) {
+    await prisma.attendanceLog.createMany({ data: attendanceRows.slice(i, i + chunk) });
+  }
+  for (let i = 0; i < timesheetRows.length; i += chunk) {
+    await prisma.timesheetDay.createMany({ data: timesheetRows.slice(i, i + chunk) });
+  }
+
+  const periodDefs = [
+    { start: "2026-06-01", end: "2026-06-15", pay: "2026-06-20" },
+    { start: "2026-06-16", end: "2026-06-30", pay: "2026-07-05" },
+    { start: "2026-07-01", end: "2026-07-15", pay: "2026-07-20" },
+    { start: "2026-07-16", end: "2026-07-31", pay: "2026-08-05" },
+  ];
+
+  for (const p of periodDefs) {
+    const period = await prisma.payrollPeriod.create({
+      data: {
+        companyId: company.id,
+        startDate: new Date(p.start),
+        endDate: new Date(p.end),
+        payDate: new Date(p.pay),
+        status: "LOCKED",
+      },
+    });
+    const run = await createOrRecalculatePayrollRun(period.id);
+    await finalizePayrollRun(run.id, adminUser.id);
+  }
+
   console.log("Seed complete.");
   console.log("Company: Devden Demo Corp — 5 depts, 3 schedules, 8 employees, 19 holidays");
+  console.log(
+    `Demo payroll: Jun–Jul 2026 — ${periodDefs.length} finalized semi-monthly runs, ` +
+      `${timesheetRows.length} timesheet days, ${attendanceRows.length} punches`
+  );
   console.log("Logins (password: password123):");
   console.log("  admin@demo.local / hr@demo.local / finance@demo.local / staff@demo.local / manager@demo.local");
   console.log("Kiosk: /kiosk (127.0.0.1 / ::1); badges BADGE-E001 … BADGE-E007 (E008 separated)");
