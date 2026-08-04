@@ -182,9 +182,49 @@ export default async function EmployeesPage({
 
           <FormSection
             title="Identity"
-            description="Badge and legal name as shown on payslips."
+            description="Photo, badge, and legal name as shown on payslips and ID cards."
             divided={false}
           >
+            <div className="sm:col-span-2 lg:col-span-4">
+              <Field label="Photo">
+                <div className="flex flex-wrap items-center gap-4">
+                  {editing?.photoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={editing.photoUrl}
+                      alt=""
+                      className="h-16 w-16 rounded-full object-cover ring-1 ring-[var(--border)]"
+                    />
+                  ) : (
+                    <div
+                      className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--accent-soft)] text-sm font-semibold text-[var(--accent)]"
+                      aria-hidden
+                    >
+                      {editing
+                        ? initials(editing.firstName, editing.lastName)
+                        : "Photo"}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <input
+                      className={inputClass}
+                      name="photo"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                    />
+                    <p className="text-xs text-[var(--muted)]">
+                      JPEG, PNG, or WebP · max 2&nbsp;MB
+                    </p>
+                    {editing?.photoUrl ? (
+                      <label className="flex items-center gap-2 text-sm text-[var(--muted)]">
+                        <input type="checkbox" name="removePhoto" className="accent-[var(--accent)]" />
+                        Remove current photo
+                      </label>
+                    ) : null}
+                  </div>
+                </div>
+              </Field>
+            </div>
             <div className="sm:col-span-1">
               <Field label="Employee No">
                 <input
@@ -450,15 +490,20 @@ export default async function EmployeesPage({
                   } ${!active ? "opacity-70" : ""}`}
                 >
                   <div className="flex flex-wrap items-center gap-4 px-5 py-4">
-                    <div
-                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${
+                  <div
+                      className={`flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full text-sm font-semibold ${
                         active
                           ? "bg-[var(--accent-soft)] text-[var(--accent)]"
                           : "bg-[var(--background)] text-[var(--muted)] ring-1 ring-[var(--border)]"
                       }`}
                       aria-hidden
                     >
-                      {initials(e.firstName, e.lastName)}
+                      {e.photoUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={e.photoUrl} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        initials(e.firstName, e.lastName)
+                      )}
                     </div>
 
                     <div className="min-w-0 flex-1">

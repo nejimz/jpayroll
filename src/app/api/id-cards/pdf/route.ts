@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { formatEmployeeName } from "@/lib/employee-name";
+import { employeePhotoToDataUrl } from "@/lib/employee-photo";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { renderBarcodePngDataUrl, renderQrPngDataUrl } from "@/domain/id-card-codes";
 import { IdCardDocument } from "@/domain/id-card-pdf";
@@ -32,7 +33,6 @@ export async function GET(req: NextRequest) {
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
   });
 
-  // Drop any rows that somehow lack badgeCode (Prisma `not: null` still types as string | null)
   const printable = employees.filter(
     (e): e is typeof e & { badgeCode: string } => Boolean(e.badgeCode?.trim())
   );
@@ -51,9 +51,10 @@ export async function GET(req: NextRequest) {
   const cards = await Promise.all(
     printable.map(async (e) => {
       const badgeCode = e.badgeCode;
-      const [barcodeDataUrl, qrDataUrl] = await Promise.all([
+      const [barcodeDataUrl, qrDataUrl, photoDataUrl] = await Promise.all([
         renderBarcodePngDataUrl(badgeCode),
         renderQrPngDataUrl(badgeCode),
+        employeePhotoToDataUrl(e.photoUrl),
       ]);
       return {
         employeeNo: e.employeeNo,
@@ -62,6 +63,7 @@ export async function GET(req: NextRequest) {
         badgeCode,
         barcodeDataUrl,
         qrDataUrl,
+        photoDataUrl,
       };
     })
   );

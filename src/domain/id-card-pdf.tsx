@@ -13,6 +13,7 @@ export type IdCardProps = {
   badgeCode: string;
   barcodeDataUrl: string;
   qrDataUrl: string;
+  photoDataUrl?: string | null;
 };
 
 const styles = StyleSheet.create({
@@ -33,8 +34,25 @@ const styles = StyleSheet.create({
     borderColor: "#1a1a1a",
     borderStyle: "solid",
     marginBottom: "6mm",
-    padding: "3.5mm",
+    padding: "3mm",
     flexDirection: "column",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 2,
+  },
+  photo: {
+    width: "16mm",
+    height: "20mm",
+    objectFit: "cover",
+    marginRight: 4,
+    borderWidth: 0.5,
+    borderColor: "#ccc",
+  },
+  headerText: {
+    flexGrow: 1,
+    flexShrink: 1,
   },
   company: {
     fontSize: 7,
@@ -44,7 +62,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   name: {
-    fontSize: 11,
+    fontSize: 10,
     fontFamily: "Helvetica-Bold",
     marginBottom: 1,
   },
@@ -60,7 +78,7 @@ const styles = StyleSheet.create({
   body: {
     flexDirection: "row",
     flexGrow: 1,
-    marginTop: 4,
+    marginTop: 3,
     alignItems: "flex-end",
   },
   left: {
@@ -71,7 +89,7 @@ const styles = StyleSheet.create({
   },
   barcode: {
     width: "48mm",
-    height: "12mm",
+    height: "11mm",
     objectFit: "contain",
   },
   badgeLabel: {
@@ -81,20 +99,33 @@ const styles = StyleSheet.create({
     fontFamily: "Courier",
   },
   qr: {
-    width: "18mm",
-    height: "18mm",
+    width: "16mm",
+    height: "16mm",
     objectFit: "contain",
   },
 });
 
 function IdCardFace(props: IdCardProps & { companyName: string }) {
-  return React.createElement(
+  const identity = React.createElement(
     View,
-    { style: styles.card, wrap: false },
+    { style: props.photoDataUrl ? styles.headerText : undefined },
     React.createElement(Text, { style: styles.company }, props.companyName),
     React.createElement(Text, { style: styles.name }, props.employeeName),
     React.createElement(Text, { style: styles.meta }, `No. ${props.employeeNo}`),
-    React.createElement(Text, { style: styles.muted }, props.department || "—"),
+    React.createElement(Text, { style: styles.muted }, props.department || "—")
+  );
+
+  return React.createElement(
+    View,
+    { style: styles.card, wrap: false },
+    props.photoDataUrl
+      ? React.createElement(
+          View,
+          { style: styles.header },
+          React.createElement(Image, { src: props.photoDataUrl, style: styles.photo }),
+          identity
+        )
+      : identity,
     React.createElement(
       View,
       { style: styles.body },

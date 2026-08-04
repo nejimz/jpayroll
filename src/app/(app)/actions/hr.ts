@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { writeAudit } from "@/lib/audit";
 import { parsePesosInput } from "@/lib/money";
+import { deleteEmployeePhotoFile, saveEmployeePhoto } from "@/lib/employee-photo";
 import type { CutoffPattern, HolidayType, PayType } from "@prisma/client";
 
 export async function upsertEmployeeAction(formData: FormData) {
@@ -26,6 +27,8 @@ export async function upsertEmployeeAction(formData: FormData) {
         ? new Date(endDateRaw)
         : null;
 
+  const departmentId = String(formData.get("departmentId") || "").trim() || null;
+
   const data = {
     employeeNo: String(formData.get("employeeNo")),
     badgeCode: String(formData.get("badgeCode") || "").trim() || null,
@@ -42,7 +45,6 @@ export async function upsertEmployeeAction(formData: FormData) {
     sssNumber: String(formData.get("sssNumber") || "") || null,
     philhealthNumber: String(formData.get("philhealthNumber") || "") || null,
     pagibigNumber: String(formData.get("pagibigNumber") || "") || null,
-    departmentId: String(formData.get("departmentId") || "").trim() || null,
     bankCode: String(formData.get("bankCode") || "") || null,
     bankAccountNo: String(formData.get("bankAccountNo") || "") || null,
     bankAccountName: String(formData.get("bankAccountName") || "") || null,
@@ -52,12 +54,34 @@ export async function upsertEmployeeAction(formData: FormData) {
     throw new Error("First name and last name are required");
   }
 
+  const photo = formData.get("photo");
+  const photoFile = photo instanceof File && photo.size > 0 ? photo : null;
+  const removePhoto = String(formData.get("removePhoto") ?? "") === "on";
+
   if (id) {
     const before = await prisma.employee.findFirst({
       where: { id, companyId: user.companyId },
     });
     if (!before) throw new Error("Employee not found");
-    const after = await prisma.employee.update({ where: { id }, data });
+
+    let photoUrl = before.photoUrl;
+    if (removePhoto && !photoFile) {
+      await deleteEmployeePhotoFile(before.photoUrl);
+      photoUrl = null;
+    } else if (photoFile) {
+      photoUrl = await saveEmployeePhoto(id, photoFile);
+    }
+
+    const after = await prisma.employee.update({
+      where: { id },
+      data: {
+        ...data,
+        photoUrl,
+        department: departmentId
+          ? { connect: { id: departmentId } }
+          : { disconnect: true },
+      },
+    });
     await writeAudit({
       companyId: user.companyId,
       actorId: user.id,
@@ -69,28 +93,46 @@ export async function upsertEmployeeAction(formData: FormData) {
         status: before.status,
         tin: before.tin,
         sssNumber: before.sssNumber,
+        photoUrl: before.photoUrl,
       },
       after: {
         basicRateCentavos: after.basicRateCentavos,
         status: after.status,
         tin: after.tin,
         sssNumber: after.sssNumber,
+        photoUrl: after.photoUrl,
       },
     });
   } else {
     const created = await prisma.employee.create({
-      data: { ...data, companyId: user.companyId },
+      data: {
+        ...data,
+        companyId: user.companyId,
+        departmentId,
+      },
     });
+
+    let photoUrl: string | null = null;
+    if (photoFile) {
+      photoUrl = await saveEmployeePhoto(created.id, photoFile);
+      await prisma.employee.update({
+        where: { id: created.id },
+        data: { photoUrl },
+      });
+    }
+
     await writeAudit({
       companyId: user.companyId,
       actorId: user.id,
       action: "EMPLOYEE_CREATE",
       entityType: "Employee",
       entityId: created.id,
-      after: data,
+      after: { ...data, departmentId, photoUrl },
     });
   }
+
   revalidatePath("/employees");
+  revalidatePath("/id-cards");
   if (id) redirect("/employees");
 }
 

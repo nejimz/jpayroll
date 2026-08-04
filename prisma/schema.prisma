@@ -140,6 +140,8 @@ model Employee {
   bankAccountName   String?
   departmentId      String?
   managerId         String?
+  /** Public path e.g. /uploads/employees/{id}.jpg */
+  photoUrl          String?
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 
